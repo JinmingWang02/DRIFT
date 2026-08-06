@@ -1,3 +1,4 @@
+import os
 import time
 from client import OpenAIModel, OpenRouterModel, GoogleModel
 
@@ -47,7 +48,14 @@ def main(args, suite_type):
 
     logger.info(f"Evaluating Suites: {suites}")
 
-    if model_name.startswith("gpt-"):
+    local_base_url = os.environ.get("OPENAI_COMPATIBLE_BASE_URL") or os.environ.get("OPENAI_BASE_URL")
+    if local_base_url:
+        client = OpenAIModel(model=args.model, logger=logger)
+        # must contain "local" so agentdojo's MODEL_NAMES substring match (base_attacks.py)
+        # resolves this to "Local model" instead of raising in get_model_name_from_pipeline
+        tools_pipeline_name = f"local-{args.model}"
+        logger.info(f"Using local OpenAI-compatible Client: {args.model} at {local_base_url}")
+    elif model_name.startswith("gpt-"):
         client = OpenAIModel(model=args.model, logger=logger)
         tools_pipeline_name = 'gpt-4o-2024-05-13'
         logger.info(f"Using OpenAI Client: {args.model}")
@@ -211,4 +219,4 @@ if __name__ == "__main__":
         main(args, suite_type)
 
 
-    
+

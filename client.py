@@ -22,15 +22,16 @@ class OpenAIModel():
         self.logger=logger
         self.logger.info(f"Initial Model {model}")
         self.api_version = api_version
-        if api_key:
-            self.client = openai.OpenAI(api_key=api_key)
-        else:
-            try:
-                self.client = openai.OpenAI(
-                    api_key = os.environ.get("OPENAI_API_KEY")
-                    )
-            except Exception as e:
-                raise ValueError(e)
+        base_url = api_base or os.environ.get("OPENAI_COMPATIBLE_BASE_URL") or os.environ.get("OPENAI_BASE_URL")
+        client_kwargs = {"api_key": api_key or os.environ.get("OPENAI_COMPATIBLE_API_KEY") or os.environ.get("OPENAI_API_KEY") or "EMPTY"}
+        if base_url:
+            client_kwargs["base_url"] = base_url
+        self.max_tokens_arg = "max_tokens" if base_url else "max_completion_tokens"
+        self.max_tokens = int(os.environ.get("DRIFT_MAX_TOKENS", "10000"))
+        try:
+            self.client = openai.OpenAI(**client_kwargs)
+        except Exception as e:
+            raise ValueError(e)
 
     
         self.logger.info(f"Using model {model}.")
@@ -75,8 +76,7 @@ class OpenAIModel():
         response = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
-            max_completion_tokens=10000,
-            # max_tokens=10000,
+            **{self.max_tokens_arg: self.max_tokens},
         )
 
         # print(f"{name} (use {self.label}):")
@@ -113,8 +113,7 @@ class OpenAIModel():
                     { "role": "system", "content": SystemPrompt},
                     { "role": "user", "content": UserPrompt}
                 ],
-                max_completion_tokens=10000,
-                # max_tokens=10000,
+                **{self.max_tokens_arg: self.max_tokens},
             ) 
             response_content = response.choices[0].message.content
 
