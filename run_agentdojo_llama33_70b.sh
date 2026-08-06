@@ -14,19 +14,21 @@
 
 set -uo pipefail
 
-REPO=/srv/bgfs0/xiaoqing/project-prompt-injection/third_party_defenses
-DRIFT_DIR="$REPO/DRIFT"
-PY="$REPO/agentdojo/.venv/bin/python"
-LOGROOT="$REPO/runs/drift-eval-llama33-70b-$(date +%Y%m%d)"
+# Portable: resolves relative to this script, and only fills in defaults for
+# anything you haven't already exported/overridden (so on a different machine
+# you can just `export OPENAI_BASE_URL=...` etc. before calling this script).
+DRIFT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="${DRIFT_PYTHON:-python3}"
+LOGROOT="${LOGROOT:-$DRIFT_DIR/runs_eval_logs/drift-eval-llama33-70b-$(date +%Y%m%d)}"
 mkdir -p "$LOGROOT"
 
-export OPENAI_BASE_URL=http://127.0.0.1:18083/v1
-export OPENAI_COMPATIBLE_BASE_URL=http://127.0.0.1:18083/v1
-export OPENAI_API_KEY=EMPTY
-export OPENAI_COMPATIBLE_API_KEY=EMPTY
+export OPENAI_BASE_URL="${OPENAI_BASE_URL:-http://127.0.0.1:18083/v1}"
+export OPENAI_COMPATIBLE_BASE_URL="${OPENAI_COMPATIBLE_BASE_URL:-$OPENAI_BASE_URL}"
+export OPENAI_API_KEY="${OPENAI_API_KEY:-EMPTY}"
+export OPENAI_COMPATIBLE_API_KEY="${OPENAI_COMPATIBLE_API_KEY:-$OPENAI_API_KEY}"
 export PYTHONUNBUFFERED=1
 
-MODEL=Llama-3.3-70B-Instruct
+MODEL="${DRIFT_MODEL:-Llama-3.3-70B-Instruct}"
 SUITES=(banking slack travel workspace)
 
 cd "$DRIFT_DIR"
